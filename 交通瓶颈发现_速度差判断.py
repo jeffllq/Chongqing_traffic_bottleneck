@@ -10,6 +10,7 @@ import pymysql
 # lowspeed_miles_coverage running_time ls_time ls_coverage road_running_time source flag
 
 Threshold_congestion_speed = 10 #速度差阈值10km/h
+Threshold_speed_difference = 99999999 #速度差阈值10km/h
 
 #判断是否拥堵，这里依据原专利的中度拥堵的阈值
 def is_congestion(road_id, speed, time):
@@ -35,7 +36,14 @@ def get_road_info():
     df = pd.read_csv('data/路网数据/路网.csv', header=0)
     return df
 
+def speed_difference(): #速度差处理
+    return
 
+
+def is_traffic_bottle(road_id, T): #指定路段和时间片，判断该路段是否为交通瓶颈
+    V_d = 0 #速度差
+    #得到road_id的邻接路段
+    return
 
 if __name__ == '__main__':
     global df_road_info
