@@ -4,17 +4,20 @@ class DB:
     def __init__(self):
         try:
             self.db_con = pymysql.connect(host='172.20.53.155', user='cqu', passwd='cqu1514', db='重庆交通规划研究院')
+            # self.cursor = self.db_con.cursor()
         except Exception as e:
             print("数据库连接失败：%s"%e)
 
     def close(self):
+        # self.cursor.close()
         self.db_con.close()
 
     def query_db(self, query):
         print("本次执行的查询query语句：%s" %query)
         try:
             cursor = self.db_con.cursor()
-            result = cursor.execute(query)
+            cursor.execute(query)
+            result = cursor.fetchall()
             return result
         except Exception as e:
             print("数据库查询失败：%s" % e)

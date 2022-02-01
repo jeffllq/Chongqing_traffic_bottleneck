@@ -10,7 +10,7 @@ from DBconnection import DB
 # lowspeed_miles_coverage running_time ls_time ls_coverage road_running_time source flag
 
 Threshold_congestion_speed = 10 #速度差阈值10km/h
-Threshold_speed_difference = 99999999 #速度差生效频率阈值 人为设置
+Threshold_speed_difference = 2 #速度差生效频率阈值 人为设置
 
 #判断是否拥堵，这里依据原专利的中度拥堵的阈值
 def is_congestion(road_id, speed, time):
@@ -38,14 +38,34 @@ def get_road_info():
     return df1, df2
 
 def get_speed(road_id, T):
-    sql = "SELECT * FROM 202110speed WHERE timestamp(time)="+       " AND road_id=%s"
-    DB.query_db(sql)
+    sql = "SELECT * FROM 202110speed WHERE timestamp(time)=\'"+T+"\' AND road_id="+str(road_id)
+    result = db.query_db(sql)
+    print("查询速度结果：",result)
+    print("查询速度结果：",result[0][5])
+    speed = result[0][5]
+    return speed
 
 
-def speed_difference(): #速度差处理
-    #速度差大于阈值
-    #速度差连续性修正
-    return
+def speed_difference_process(road_id,T,downstream_roadid_list): #速度差处理
+    #速度差大于阈值 有多个间接邻接的路段，计算和当前路段的速度差，暂时假设有一个速度差达到阈值，就算做拥堵瓶颈
+    d_T_flag = False
+    for indirect_road in downstream_roadid_list[1]:
+        print("速度差：", get_speed(indirect_road,T) - get_speed(road_id, T))
+    #     if (get_speed(indirect_road,T) - get_speed(road_id, T))>=Threshold_congestion_speed: #T时刻，满足速度阈值
+    #         # return True
+    #         d_T_flag = True
+    # if d_T_flag:
+    #     return True
+    # else:
+    #     # 速度差连续性修正
+    #     count = 0
+    #     if ((get_speed(indirect_road,T-1) - get_speed(road_id, T-1))>=Threshold_congestion_speed): count+=1
+    #     if ((get_speed(indirect_road,T-2) - get_speed(road_id, T-2))>=Threshold_congestion_speed): count+=1
+    #     if ((get_speed(indirect_road,T+1) - get_speed(road_id, T+1))>=Threshold_congestion_speed): count+=1
+    #     if ((get_speed(indirect_road,T+2) - get_speed(road_id, T+2))>=Threshold_congestion_speed): count+=1
+    #     d_T_flag = count>Threshold_s peed_difference
+    #     return d_T_flag
+
 
 def find_road_downstream(road_id):
     road_id = 9325
@@ -60,18 +80,22 @@ def find_road_downstream(road_id):
     # print(result_list) # [[直接相邻roadid], [简介相邻roadid]]
     return result_list
 
-def is_traffic_bottle(road_id, T): #指定路段和时间片，判断该路段是否为交通瓶颈
+def is_traffic_bottleneck(road_id, T): #指定路段和时间片，判断该路段是否为交通瓶颈
     V_d = 0 #速度差
     downstream_roadid_list = find_road_downstream(road_id)#找到road_id的邻接路段
-
-    return
+    print("邻接的路段：",downstream_roadid_list)
+    flag_traffic_bottleneck = speed_difference_process(road_id,T,downstream_roadid_list)
+    return flag_traffic_bottleneck
 
 if __name__ == '__main__':
     global df_road_info
     global df_road_topo
     df_road_info, df_road_topo = get_road_info()
+    global db
+    db = DB()
     # is_congestion(9325,10,202010)
-    find_road_downstream(9325)
+    result =   (19430,'2021-10-01 12:40:00' )
+    print("是否瓶颈：", result)
     # db = pymysql.connect(host='172.20.53.155',user='cqu',passwd='cqu1514',db='重庆交通规划研究院')
     # cursor = db.cursor()
     # SQL = "SELECT * FROM 202110speed where road_id=6352"
