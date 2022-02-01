@@ -13,7 +13,7 @@ class DB:
         self.db_con.close()
 
     def query_db(self, query):
-        print("本次执行的查询query语句：%s" %query)
+        # print("本次执行的查询query语句：%s" %query)
         try:
             cursor = self.db_con.cursor()
             cursor.execute(query)
@@ -25,7 +25,7 @@ class DB:
             exit()
 
     def alter_db(self, query):
-        print("本次执行的删改query语句：%s" %query)
+        # print("本次执行的删改query语句：%s" %query)
         try:
             cursor = self.db_con.cursor()
             cursor.execute(query)
