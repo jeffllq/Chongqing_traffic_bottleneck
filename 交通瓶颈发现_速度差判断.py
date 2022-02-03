@@ -3,6 +3,7 @@ import pandas as pd
 from DBconnection import DB
 import numpy as np
 import copy
+import threading
 
 #车速原始数据字段
 # columns = ['时间', '路段编号', '计算车辆样本数', '里程覆盖率', '车速',
@@ -13,7 +14,7 @@ import copy
 # lowspeed_miles_coverage running_time ls_time ls_coverage road_running_time source flag
 
 Threshold_congestion_speed = 10 #速度差阈值10km/h
-Threshold_speed_difference = 0.8 #速度差生效频率阈值 人为设置
+Threshold_speed_difference = 0.75 #速度差生效频率阈值 人为设置
 
 #判断是否拥堵，这里依据原专利的中度拥堵的阈值
 def is_congestion(road_id, speed, time):
@@ -44,10 +45,10 @@ def get_speed(road_id, T):
     sql = "SELECT * FROM 202110speed WHERE timestamp(time)=\'"+T+"\' AND road_id="+str(road_id)
     result = db.query_db(sql)
     if len(result)==0:
-        print("路段",road_id,"在时间",T,"没有速度的记录")
+        # print("路段",road_id,"在时间",T,"没有速度的记录")
         return None
     # print("查询速度结果：",result)
-    print("查询速度结果：",result[0][5])
+    # print("查询速度结果：",result[0][5])
     speed = result[0][5]
     return float(speed)
 
@@ -56,6 +57,7 @@ def get_speed_difference(road_id, indirect_road, T):
     v_2 = get_speed(indirect_road, T)
     if ((v_1==None) | (v_2==None)):
         return False
+    # print(road_id, "与",indirect_road,"的速度差：",v_2-v_1)
     if v_2-v_1>Threshold_speed_difference: #下游路段比当前路段速度快，差值超过阈值
         return True
     return False
@@ -72,22 +74,24 @@ def datetime_add(T, minutes):
 
 def speed_difference_process(road_id,T,downstream_roadid_list): #速度差处理
     #速度差大于阈值 有多个间接邻接的路段，计算和当前路段的速度差，暂时假设有一个速度差达到阈值，就算做拥堵瓶颈
-    count = 0 #T-2 到 T+2的生效频率
+
     l = len(downstream_roadid_list[1])
     for indirect_road in downstream_roadid_list[1]:
         if get_speed_difference(road_id, indirect_road, T):
             print("满足简单的速度差阈值条件")
             return True
         else:
+            count = 0  # T-2 到 T+2的生效频率
             if(get_speed_difference(road_id, indirect_road, datetime_add(T,-5))): count+=1
             if(get_speed_difference(road_id, indirect_road, datetime_add(T,-10))): count+=1
             if(get_speed_difference(road_id, indirect_road, datetime_add(T,+5))): count+=1
             if(get_speed_difference(road_id, indirect_road, datetime_add(T,+10))): count+=1
-    print("生效频率：", count/len(downstream_roadid_list[1]))
-    if count/len(downstream_roadid_list[1])>Threshold_speed_difference:
-        return True
-    else:
-        return False
+            # print("生效次数：", count)
+            if count/len(downstream_roadid_list[1])>=Threshold_speed_difference:
+                print("生效频率：", count / len(downstream_roadid_list[1]))
+                return True
+            else:
+                return False
 
 def find_road_downstream(road_id):
     # road_id = 9325
@@ -99,13 +103,13 @@ def find_road_downstream(road_id):
     result2 = df_road_topo[df_road_topo['上游ROADID'].isin(tmp_set1)]
     tmp_list2 = result2['当前ROADID'].values
     result_list.append(list(set(tmp_list2))) # 间接相邻的路段
-    # print(result_list) # [[直接相邻roadid], [简介相邻roadid]]
+    # print(result_list[1]) # [[直接相邻roadid], [简介相邻roadid]]
     return result_list
 
 def is_traffic_bottleneck(road_id, T): #指定路段和时间片，判断该路段是否为交通瓶颈
     V_d = 0 #速度差
     downstream_roadid_list = find_road_downstream(road_id)#找到road_id的邻接路段
-    print(road_id,"的邻接的路段：",downstream_roadid_list)
+    # print(road_id,"的邻接的路段：",downstream_roadid_list)
     flag_traffic_bottleneck = speed_difference_process(road_id,T,downstream_roadid_list)
     return flag_traffic_bottleneck
 
@@ -142,6 +146,7 @@ def get_period_traffic_bottleneck(Start_time, End_time, road_list):
             df_result.loc[T_index, road_id] = flag
     # df_result.to_csv('data/Result_bottleneck/result.csv', index=False, encoding='utf-8-sig')
     return df_result
+
 
 
 if __name__ == '__main__':
