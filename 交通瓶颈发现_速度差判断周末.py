@@ -42,7 +42,7 @@ def get_road_info():
 
 def get_speed(road_id, T):
     sql = "SELECT * FROM 202110speed WHERE timestamp(time)=\'"+T+"\' AND road_id="+str(road_id)
-    result = db.query_db(sql)
+    result = db.SELECT(sql)
     if len(result)==0:
         # print("路段",road_id,"在时间",T,"没有速度的记录")
         return None

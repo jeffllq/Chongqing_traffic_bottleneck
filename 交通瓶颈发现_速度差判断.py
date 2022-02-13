@@ -1,9 +1,13 @@
 from datetime import datetime, timedelta
 import pandas as pd
 from DBconnection import DB
+import time
 import numpy as np
 import copy
 import threading
+from queue import Queue
+from DB_connection_pool import DB_connection_pool
+from DBUtils.PooledDB import PooledDB
 
 #车速原始数据字段
 # columns = ['时间', '路段编号', '计算车辆样本数', '里程覆盖率', '车速',
@@ -42,14 +46,15 @@ def get_road_info():
     return df1, df2
 
 def get_speed(road_id, T):
-    sql = "SELECT * FROM 202110speed WHERE timestamp(time)=\'"+T+"\' AND road_id="+str(road_id)
-    result = db.query_db(sql)
+    sql = "SELECT speed FROM 202110speed WHERE timestamp(time)=\'"+T+"\' AND road_id="+str(road_id)
+    result = db.SELECT(sql)
+    # print(result)
     if len(result)==0:
         # print("路段",road_id,"在时间",T,"没有速度的记录")
         return None
     # print("查询速度结果：",result)
-    # print("查询速度结果：",result[0][5])
-    speed = result[0][5]
+    # print("查询速度结果：",result[0][0])
+    speed = result[0][0]
     return float(speed)
 
 def get_speed_difference(road_id, indirect_road, T):
@@ -137,33 +142,42 @@ def get_period_traffic_bottleneck(Start_time, End_time, road_list):
     for i in range(0, len(T_list)):
         df_result.loc[i, 'time'] = T_list[i]
     df_result['time'] = T_list
-    print(df_result)
-    print(road_list)
+    # print(df_result)
+    # print(road_list)
+
+
     for road_id in road_list:
         for T in T_list:
             flag = is_traffic_bottleneck(road_id, T)
             T_index = df_result[df_result['time']==T].index.tolist()[0]
             df_result.loc[T_index, road_id] = flag
     # df_result.to_csv('data/Result_bottleneck/result.csv', index=False, encoding='utf-8-sig')
+    # 这里需要改成多线程并发，提高效率
     return df_result
 
 
 
+
+class process
+
+
+
 if __name__ == '__main__':
+    start_time = time.clock()
+    print(start_time)
     global df_road_info
     global df_road_topo
     df_road_info, df_road_topo = get_road_info()
     global db
-    db = DB()
+    # db = DB()
+    db = DB_connection_pool()
     road_list = df_road_info['ROADID'].values.tolist()
+    global road_queue
+    road_queue = Queue()
+    for i in road_list:
+        road_queue.put(i)
 
-    # get_period_traffic_bottleneck('2021-10-01 12:40:00', '2021-10-01 12:50:00', [22124,3615,1928])
-    df1 = get_period_traffic_bottleneck('2021-10-16 8:00:00', '2021-10-16 20:00:00', road_list) #普通的周三
-    df1.to_csv('data/Result_bottleneck/工作日（10月16日周三）瓶颈查询结果.csv', index=False, encoding='utf-8-sig')
-
-    # df2 = get_period_traffic_bottleneck('2021-10-19 8:00:00', '2021-10-19 20:00:00', road_list) #普通的周六
-    # df2.to_csv('data/Result_bottleneck/周末（10月19日周六）瓶颈查询结果.csv', index=False, encoding='utf-8-sig')
-
+    df = get_period_traffic_bottleneck('2021-10-01 12:40:00', '2021-10-01 12:50:00', [22124,3615,1928,15116,19884,9324])
 
 
     # while(1):
@@ -180,5 +194,7 @@ if __name__ == '__main__':
 #时间格式 2021-10-01 12:40:00
 # 计算工作日10月16日 周三 8:00-20:00
 # 计算周末10月19日 周六 8:00-20:00
-
+    end_time = time.clock()
+    print((end_time-start_time))
+    print(df)
     db.close()
