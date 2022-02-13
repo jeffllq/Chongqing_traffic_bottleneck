@@ -12,6 +12,7 @@ class DB:
         # self.cursor.close()
         self.db_con.close()
 
+
     def SELECT(self, query):
         # print("本次执行的查询query语句：%s" %query)
         try:
