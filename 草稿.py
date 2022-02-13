@@ -13,9 +13,9 @@ def transition(df):
             if df.loc[T, road_id] == True:
                 # tmp = [T, road_id, True]
                 result_list.append([T, road_id, '1'])
-    if os.path.exists('周末（10月19日周六）瓶颈查询结果.txt'):
-        os.remove('周末（10月19日周六）瓶颈查询结果.txt')
-    file_write_obj = open('周末（10月19日周六）瓶颈查询结果.txt','w')
+    if os.path.exists('data/output/周末（10月19日周六）瓶颈查询结果.txt'):
+        os.remove('data/output/周末（10月19日周六）瓶颈查询结果.txt')
+    file_write_obj = open('data/output/周末（10月19日周六）瓶颈查询结果.txt', 'w')
     for line in result_list:
         line = ','.join(line)
         file_write_obj.writelines(line)
