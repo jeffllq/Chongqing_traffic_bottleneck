@@ -158,8 +158,6 @@ def get_period_traffic_bottleneck(Start_time, End_time, road_list):
 
 
 
-class process
-
 
 
 if __name__ == '__main__':

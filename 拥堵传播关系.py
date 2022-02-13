@@ -44,19 +44,27 @@ def get_road_info():
     df2 = pd.read_csv('data/ROAD上下游关系.CSV', header=0)
     return df1, df2
 
+def temporal_relationship_congestion():
+
+    return
+
 def congestion_related():
     df_road_info, df_road_topo = get_road_info()
     road_id_list = df_road_info.ROADID.values.tolist()
-    df_spatio = pd.DataFrame(columns=road_id_list, index=road_id_list).fillna(0)
-    df_temporal = pd.DataFrame(columns=road_id_list, index=road_id_list).fillna(0)
     #空间关系：直接相连、间接相连
+    df_spatio = pd.DataFrame(columns=road_id_list, index=road_id_list).fillna(0)
+    print(df_spatio)
     for topo in df_road_topo.values.tolist():
         road1 = topo[1]
         road2 = topo[2]
-        if (np.isnan(road1)) or (np.isnan(road2)): continue
-        df_spatio.loc[int(road1), str(int(road2))] = 1
-    print(df_spatio)
+        if ((np.isnan(road1)) or (np.isnan(road2))): continue
+        if ((road1 not in road_id_list) or (road2 not in road_id_list)): continue
+        df_spatio.loc[int(road1), int(road2)] = 1
+    # print(df_spatio)
     #时间关系：下游发生拥堵的时间为上有路段拥堵的时间滞后，应该为一个间隔
+    df_temporal = pd.DataFrame(columns=road_id_list, index=road_id_list).fillna(0)
+    df_temporal = temporal_relationship_congestion()
+
     return
 
 def congestion_propagation_causal():
