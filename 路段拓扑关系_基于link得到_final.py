@@ -37,8 +37,8 @@ def find_road_nodes(df_temp_DXD_0, df_temp_DXD_1):
 
 def get_road_topo(df_road_nodes, df_road):
     df_road_nodes = df_road_nodes.drop(['FLAG','TJL','FS','TRAFFIC'],axis=1)
-    print('road的起始节点信息\n',df_road_nodes)
-    print('road的信息\n',df_road)
+    # print('road的起始节点信息\n',df_road_nodes)
+    # print('road的信息\n',df_road)
     # df = pd.merge(df_road,df_road_nodes, how='inner',left_on=['ROADID'], right_on=['ID'])
     # print(df)
     df_road_nodes_temp = copy.deepcopy(df_road_nodes)
@@ -48,6 +48,11 @@ def get_road_topo(df_road_nodes, df_road):
     df_downstream = df_result.rename(columns={'ID_x':'当前ROADID', 'ID_y':'下游ROADID'})
     df_upstream = copy.deepcopy(df_downstream).rename(columns={'当前ROADID':'上游ROADID', '下游ROADID':'当前ROADID'})
     df_final = pd.merge(df_upstream, df_downstream, how='outer', on=['当前ROADID'])
+    print(df_final)
+    for i in range(df_final.shape[0]):
+        if abs(df_final.loc[i,'下游ROADID']-(df_final.loc[i,'当前ROADID'])==1):
+            print("假的上下游")
+            df_final = df_final.drop([i])
     print(df_final)
     df_final.to_csv('data/ROAD上下游关系.CSV', index=False)
 

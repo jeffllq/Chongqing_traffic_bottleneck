@@ -1,35 +1,44 @@
+from treelib import Tree
 import pandas as pd
-import os
+from copy import deepcopy
 
-#最终结果 时间，路段，是否为瓶颈
-def transition(df):
-    result_list = []
-    T_list = df.time.values
-    df.set_index(['time'], inplace=True)
-    # print(T_list)
-    cols = df.columns
-    for road_id in cols[0:]:
-        for T in T_list:
-            if df.loc[T, road_id] == True:
-                # tmp = [T, road_id, True]
-                result_list.append([T, road_id, '1'])
-    if os.path.exists('data/output/周末（10月19日周六）瓶颈查询结果.txt'):
-        os.remove('data/output/周末（10月19日周六）瓶颈查询结果.txt')
-    file_write_obj = open('data/output/周末（10月19日周六）瓶颈查询结果.txt', 'w')
-    for line in result_list:
-        line = ','.join(line)
-        file_write_obj.writelines(line)
-        file_write_obj.write('\n')
-    file_write_obj.close()
+def create_road_correlation_tree():
+    df_road_topo = pd.read_csv('data/ROAD上下游关系.CSV', header=0)
+    df_road_topo = df_road_topo[['当前ROADID','下游ROADID']].drop_duplicates().reset_index(drop=True)
+    # tmp_list = list(set(df_road_topo.values.tolist()))
+    road_topo_groups = df_road_topo.groupby(['当前ROADID']).groups
+    tree_list = []
+    for key in road_topo_groups.keys():
+        tree = Tree()
+        tree.create_node(key, key)
+        for value in road_topo_groups.get(key):
+            road_id = df_road_topo.loc[value,'下游ROADID']
+            tree.create_node(road_id,road_id,parent=key)
+        # tree.show()
+        tree_list.append(tree)
+
+    new_tree = tree_list[0]
+    tmp_tree = tree_list[1]
+    while(new_tree.contains(tmp_tree.root)):
+        tr
+
+    for tree1 in tree_list:
+        for tree2 in tree_list:
+            if tree1.contains(tree2.root):
+                print("jhhh")
+                tree1.paste(tree2.root, tree2)
+                tree1.show()
 
 
+
+
+def create_propagation_probability():
+    return
 
 if __name__ == '__main__':
-    df_workday = pd.read_csv('data/Result_bottleneck/工作日（10月16日周三）瓶颈查询结果.csv', header=0)
-    df2_weekend = pd.read_csv('data/Result_bottleneck/周末（10月19日周六）瓶颈查询结果.csv', header=0)
+    create_road_correlation_tree()
 
-    # transition(df_workday)
-    transition(df2_weekend)
+
 
 
 
