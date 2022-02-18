@@ -50,9 +50,18 @@ def get_road_topo(df_road_nodes, df_road):
     df_final = pd.merge(df_upstream, df_downstream, how='outer', on=['当前ROADID'])
     print(df_final)
     for i in range(df_final.shape[0]):
-        if abs(df_final.loc[i,'下游ROADID']-(df_final.loc[i,'当前ROADID'])==1):
-            print("假的上下游")
-            df_final = df_final.drop([i])
+        try:
+            if (abs(df_final.loc[i,'下游ROADID']-(df_final.loc[i,'当前ROADID']))==1):
+                print("假的上下游")
+                df_final = df_final.drop([i])
+        except:pass
+    df_final.reset_index(drop=True)
+    for i in range(df_final.shape[0]):
+        try:
+            if (abs(df_final.loc[i,'上游ROADID']-(df_final.loc[i,'当前ROADID']))==1):
+                print("假的上下游")
+                df_final = df_final.drop([i])
+        except:pass
     print(df_final)
     df_final.to_csv('data/ROAD上下游关系.CSV', index=False)
 
