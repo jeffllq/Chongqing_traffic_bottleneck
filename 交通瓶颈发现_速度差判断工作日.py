@@ -38,7 +38,7 @@ def is_congestion(road_id, speed, time):
 
 def get_road_info():
     df1 = pd.read_csv('data/路网数据/路网.csv', header=0)
-    df2 = pd.read_csv('data/ROAD上下游关系.CSV', header=0)
+    df2 = pd.read_csv('data/ROAD上下游关系.csv', header=0)
     return df1, df2
 
 def get_speed(road_id, T):

@@ -61,17 +61,14 @@ def get_sample_speed(T_start, T_end):
     return df_result
 
 def get_road_info():
-    df1 = pd.read_csv('data/路网数据/路网.csv', header=0)
-    df2 = pd.read_csv('data/ROAD上下游关系.CSV', header=0)
-    return df1, df2
+    df_road_info = pd.read_csv('data/路网数据/路网.csv', header=0)
+    df_road_topo = pd.read_csv('data/ROAD上下游关系.csv', header=0)
+    return df_road_info, df_road_topo
 
 def temporal_relationship_congestion(dict_spatio, df_sample_speed):
     #将空间关联性结果传入，只考察空间相关的路段是否存在时间关联
     #时间关联的结果跟选取的观测时间段有关
     #使用工作日16点到20点的时间段作为观测时间段
-
-    #测试数据
-    # dict_spatio = {64.0: [22340.0, 19532.0]}
     dict_temoral = {}
     print(dict_spatio)
     # print("总共考察路段数量：",len(dict_spatio.keys()))
@@ -112,11 +109,10 @@ def temporal_relationship_congestion(dict_spatio, df_sample_speed):
             T = datetime_add(T, 5)
             # print("更新时间", T)
         dict_temoral[key] = list(set(tmp_list))
-    print(dict_temoral)
-    with open('中间数据/拥堵关联关系(10到15分钟).txt','w') as file:
-        file.write(json.dumps(dict_temoral))
-    return
+    # print(dict_temoral)
+    return dict_temoral
 
+#发现拥堵传播的关联性
 def congestion_related():
     #空间关系：直接相连(暂时不包含间接相连)
     df_tmp = df_road_topo[['当前ROADID','下游ROADID']].drop_duplicates().reset_index(drop=True)
@@ -133,23 +129,63 @@ def congestion_related():
     df_sample_speed = pd.read_csv('tmp_sample_speed.csv', header=0)
     #时间关系：下游发生拥堵的时间为上有路段拥堵的时间滞后，设置为1到3个时间片间隔
     # df_temporal = pd.DataFrame(columns=road_id_list, index=road_id_list).fillna(0)
-    temporal_relationship_congestion(dict_spatio, df_sample_speed)
+    dict_temoral = temporal_relationship_congestion(dict_spatio, df_sample_speed)
+    with open('中间数据/拥堵关联关系(10到15分钟).txt','w') as file:
+        file.write(json.dumps(dict_temoral))
     return
 
-def spanning_tree(congestion_correlation):
-    #假设传入的是（父节点，子节点）的有向关系
-    Trees = set()
+def congestion_occurrence_probability():
+    # 计算拥堵发生概率（一）：定义为周一到周五，5个工作日内(10月的18-22号)，同一时间段发生拥堵的概率
+    # 计算拥堵发生概率（二）：定义工作日内(10月的19号)，晚上16到20点，拥堵时间占总时长的比例
+    # df_sample_speed = pd.read_csv('tmp_sample_speed.csv', header=0)
+    # df_sample_speed['congestion_flag'] = 0
+    # print(df_sample_speed.shape[0])
+    # for idx in range(df_sample_speed.shape[0]):
+    #     speed = df_sample_speed.loc[idx, 'speed']
+    #     road_id = df_sample_speed.loc[idx, 'road_id']
+    #     if is_congestion(road_id, speed):
+    #         df_sample_speed.loc[idx, 'congestion_flag'] = 1
+    # df_sample_speed.to_csv('中间数据/带拥堵判断结果的速度记录.csv', index=False)
+
+    Total_duration = 48 #总共48个时间片
+    df_sample_speed = pd.read_csv('中间数据/带拥堵判断结果的速度记录.csv', header=0)
+    road_id_list = list(set(df_sample_speed['road_id'].values.tolist()))
+    dict_res = {}
+    for road_id in road_id_list:
+        df_tmp = df_sample_speed[df_sample_speed['road_id']==road_id]
+        # print("拥堵发生次数",df_tmp['congestion_flag'].sum())
+        ratio = round(df_tmp['congestion_flag'].sum()/Total_duration, 2)
+        print(road_id,"的拥堵发生概率",ratio)
+        dict_res[road_id] = ratio
+    with open('中间数据/路段拥堵发生概率.txt','w') as file:
+        file.write(json.dumps(dict_res))
+    return
+
+#构建拥堵关联关系的树
+def create_road_correlation_tree(dict_corr):
+    #dict_corr： key值是当前路段 values是跟当前路段有关联关系的路段
+    for key_road_id in dict_corr.keys():
+        tree_tmp = Tree()
+        tree_tmp.create_node(key_road_id,key_road_id)
+        for value_road_id in dict_corr[key_road_id]:
+            tree_tmp.create_node(value_road_id, value_road_id,parent=key_road_id)
+        tree_tmp.show()
+    return
+
+
+def spanning_tree(dict_corr):
     print("执行生成树")
-    # for correlation in congestion_correlation:
-    #     print()
+    create_road_correlation_tree(dict_corr) #根据拥堵关联关系，画树
 
     return
 
 def congestion_propagation_causal():
-    congestion_related()
-    congestion_correlation = open('中间数据/拥堵关联关系（5到15分钟）.txt', 'r')
-    #对congestion_correlation格式转换为字典
-    # spanning_tree(congestion_correlation)
+    # congestion_related() #发现路段间拥堵的关联关系，写入中间文件
+    # congestion_correlation = open('中间数据/拥堵关联关系（10到15分钟）.txt', 'r') #读取关联关系文件
+    with open('中间数据/拥堵关联关系(10到15分钟).txt', 'r') as file:
+        dict_corr = json.load(file)
+    # print(dict_corr)
+    spanning_tree(dict_corr) #通过最大生成树查找拥堵传播的因果关系
     return
 
 if __name__ == '__main__':

@@ -63,7 +63,7 @@ def get_road_topo(df_road_nodes, df_road):
                 df_final = df_final.drop([i])
         except:pass
     print(df_final)
-    df_final.to_csv('data/ROAD上下游关系.CSV', index=False)
+    df_final.to_csv('data/ROAD上下游关系.csv', index=False)
 
 if __name__ == '__main__':
     df_link = pd.read_csv('data/路网拓扑/link.csv')
