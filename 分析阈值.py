@@ -28,23 +28,8 @@ def is_congestion(road_id, speed):
         # print("拥堵判断失败！")
         return False
 
-def create_road_correlation_tree():
-    df_road_topo = pd.read_csv('data/ROAD上下游关系.csv', header=0)
-    df_road_topo = df_road_topo[['当前ROADID','下游ROADID']].drop_duplicates().reset_index(drop=True)
-    # tmp_list = list(set(df_road_topo.values.tolist()))
-    road_topo_groups = df_road_topo.groupby(['当前ROADID']).groups
-    tree_list = []
-    for key in road_topo_groups.keys():
-        tree = Tree()
-        tree.create_node(key, key)
-        for value in road_topo_groups.get(key):
-            road_id = df_road_topo.loc[value,'下游ROADID']
-            tree.create_node(road_id,road_id,parent=key)
-        # tree.show()
-        tree_list.append(tree)
-
-    new_tree = tree_list[0]
-    tmp_tree = tree_list[1]
+bfgth
+|
 
 def spatial_temporal_threshold():
     # 两个路段的最短路径距离小于空间阈值T_s

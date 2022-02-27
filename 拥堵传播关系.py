@@ -173,36 +173,54 @@ def congestion_occurrence_probability():
 def create_road_correlation_tree(df_corr):
     # print("拥堵的时空关联性",df_corr)
     corr_list = df_corr.values.tolist()
-    rows = df_corr.shape[0]
-    # print(corr_list)
+    corr_set = set()
+    for item in corr_list:
+        item = (item[0], item[1], item[2])
+        corr_set.add(item)
 
     #如何考虑时间标签 暂时不考虑
 
-    CPG = set()
+    CPG = list()
     G = nx.DiGraph()
-    CPG.add(G)
-    for i in range(0,rows):
-        corr_pair = corr_list[i]
-        for G_old in CPG:
-            if ((corr_pair[1] in G)&(corr_pair[2] not in G))|(corr_pair[1] not in G)&(corr_pair[2] in G): #至少存在一个结点
-                G_old.add_edge(corr_pair[1],corr_pair[2])
-                print("添加新边")
-                continue
-            elif (corr_pair[1] in G) & (corr_pair[2] in G): #两个结点都存在，不做处理
-                continue
-        #遍历了已有的图，两个结点都不存在，创建新的图
-        if(corr_pair[1] not in G)&(corr_pair[2] not in G):
-            G_new = nx.DiGraph() #添加新的图
-            G_new.add_edge(corr_pair[1],corr_pair[2])
-            CPG.add(G_new)
+    CPG.append(G)
+
+    while(len(corr_set)>0):
+        corr_pair = corr_set.pop() #随机选一个关系
+        road_1 = corr_pair[1]
+        road_2 = corr_pair[2]
+        m = -1
+        n = -1 #初始编号
+        for j in range(0, len(CPG)): #找第一个路段存在的图
+            if road_1 in CPG[j]:
+                m = j
+        for j in range(0, len(CPG)): #找第二个路段存在的图
+            if road_2 in CPG[j]:
+                n = j
+        #存在于同一个图中
+        if((m==n)&(m>=0)):
+            continue
+        # 两个路段存在于不同的图中
+        if((m>=0)&(n>=0)&(m!=n)):
+            G_new = nx.compose(CPG[m],CPG[n])
+            CPG.append(G_new) #合并两个图
+            CPG.pop(m)
+            CPG.pop(n)
+        # 一个路段在某个图中，另一路段不在任何一个图中
+        if((m>=0)&(n==-1)):
+            CPG[m].add_edge(road_1, road_2)
+        elif((m==-1)&(n>=0)):
+            CPG[n].add_edge(road_1, road_2)
+        # 两个路段均不在任何一个图中
+        if((m==-1)&(n==-1)):
+            G_new = nx.DiGraph()
+            G_new.add_edge(road_1, road_2)
+            CPG.append(G_new)
 
     print(len(CPG))
-    # for G in CPG:
-    #     nx.draw(G, with_labels=True)
-    #     plt.show()
-
-
-
+    plt.figure()
+    for G in CPG:
+        nx.draw(G, with_labels=True)
+        plt.show()
     return
 
 
