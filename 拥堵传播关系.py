@@ -190,31 +190,35 @@ def create_road_correlation_tree(df_corr):
         road_2 = corr_pair[2]
         m = -1
         n = -1 #初始编号
+
         for j in range(0, len(CPG)): #找第一个路段存在的图
             if road_1 in CPG[j]:
                 m = j
         for j in range(0, len(CPG)): #找第二个路段存在的图
             if road_2 in CPG[j]:
                 n = j
-        #存在于同一个图中
+
+        #1、存在于同一个图中
         if((m==n)&(m>=0)):
-            continue
-        # 两个路段存在于不同的图中
+            if CPG[m].has_edge(road_1, road_2):
+                continue
+            else:
+                CPG[m].add_edge(road_1, road_2)
+        #2、两个路段存在于不同的图中
         if((m>=0)&(n>=0)&(m!=n)):
-            G_new = nx.compose(CPG[m],CPG[n])
-            CPG.append(G_new) #合并两个图
-            CPG.pop(m)
-            CPG.pop(n)
-        # 一个路段在某个图中，另一路段不在任何一个图中
+            CPG[m] = nx.compose(CPG[m],CPG[n])#合并两个图
+            CPG.remove(CPG[n])
+        #3、一个路段在某个图中，另一路段不在任何一个图中
         if((m>=0)&(n==-1)):
             CPG[m].add_edge(road_1, road_2)
         elif((m==-1)&(n>=0)):
             CPG[n].add_edge(road_1, road_2)
-        # 两个路段均不在任何一个图中
+        #4、两个路段均不在任何一个图中
         if((m==-1)&(n==-1)):
             G_new = nx.DiGraph()
             G_new.add_edge(road_1, road_2)
             CPG.append(G_new)
+            print(len(CPG))
 
     print(len(CPG))
     plt.figure()

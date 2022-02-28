@@ -31,6 +31,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/中间数据/带拥堵判断结果的速度记录.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/中间数据/拥堵关联关系(10到15分钟).csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
