@@ -200,7 +200,7 @@ def create_road_correlation_tree(df_corr):
 
         #1、存在于同一个图中
         if((m==n)&(m>=0)):
-            if CPG[m].has_edge(road_1, road_2):
+            if CPG[m].has_edge(road_1, road_2): #不存在连接的有向边，则添加有向边
                 continue
             else:
                 CPG[m].add_edge(road_1, road_2)
