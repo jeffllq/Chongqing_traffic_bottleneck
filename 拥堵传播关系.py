@@ -200,13 +200,14 @@ def create_road_correlation_tree(df_corr):
 
         #1、存在于同一个图中
         if((m==n)&(m>=0)):
-            if CPG[m].has_edge(road_1, road_2): #不存在连接的有向边，则添加有向边
+            if CPG[m].has_edge(road_1, road_2): #不存在连接的有向边，则添加有向边（这里先不做环的处理）
                 continue
             else:
                 CPG[m].add_edge(road_1, road_2)
         #2、两个路段存在于不同的图中
         if((m>=0)&(n>=0)&(m!=n)):
-            CPG[m] = nx.compose(CPG[m],CPG[n])#合并两个图
+            CPG[m] = nx.compose(CPG[m],CPG[n])#合并两个图，并不会有画有向边的操作
+            CPG[m].add_edge(road_1, road_2) #画出新的有向边
             CPG.remove(CPG[n])
         #3、一个路段在某个图中，另一路段不在任何一个图中
         if((m>=0)&(n==-1)):
@@ -218,20 +219,22 @@ def create_road_correlation_tree(df_corr):
             G_new = nx.DiGraph()
             G_new.add_edge(road_1, road_2)
             CPG.append(G_new)
-            print(len(CPG))
+            # print(len(CPG))
 
-    print(len(CPG))
-    plt.figure()
-    for G in CPG:
-        nx.draw(G, with_labels=True)
-        plt.show()
-    return
+    print(len(CPG)) #最后得到37个拥堵传播图
+    # plt.figure()
+    # for G in CPG:
+    #     nx.draw(G, with_labels=True)
+    #     plt.show()
+    return CPG #返回拥堵传播图的集合
 
 
 def congestion_propagation_causal():
     # congestion_related() #发现路段间拥堵的关联关系，写入中间文件
     df_corr = pd.read_csv('中间数据/拥堵关联关系(10到15分钟).csv',header=0)
-    create_road_correlation_tree(df_corr) #构建拥堵传播因果关系图
+    CPG = create_road_correlation_tree(df_corr) #构建拥堵传播因果关系图，返回图的集合
+
+
     return
 
 if __name__ == '__main__':
