@@ -138,8 +138,6 @@ def congestion_related():
     df = pd.DataFrame(result_spatio_temporal, columns=['time', 'congestion_from_road', 'congestion_to_road']).drop_duplicates()
 
     df.to_csv('中间数据/拥堵关联关系(10到15分钟).csv', index=False)
-    # with open('中间数据/拥堵关联关系(10到15分钟).txt','w') as file:
-    #     file.write(json.dumps(dict_temoral))
     return
 
 def congestion_occurrence_probability():
@@ -221,19 +219,38 @@ def create_road_correlation_tree(df_corr):
             CPG.append(G_new)
             # print(len(CPG))
 
-    print(len(CPG)) #最后得到37个拥堵传播图
+    print(len(CPG)) #最后得到35个拥堵传播图
     # plt.figure()
     # for G in CPG:
     #     nx.draw(G, with_labels=True)
     #     plt.show()
     return CPG #返回拥堵传播图的集合
 
+def constructing_maximal_spanning_trees(CPG): #根据传播图构建最大生成树，参数CPG：图的集合
+
+    for graph in CPG:
+        Nodes = graph.nodes()
+        # 将图压缩为邻接矩阵A
+        A = pd.DataFrame(columns=Nodes, index=Nodes).fillna(0)
+        for road_1 in Nodes:
+            for road_2 in Nodes:
+                if graph.has_edge(road_1, road_2):
+                    A.loc[road_1, road_2] = 1
+
+        #需要删除环的存在
+
+        #以任一节点为起点，生成最大生成树
+
+
+
+
+    return
 
 def congestion_propagation_causal():
-    congestion_related() #发现路段间拥堵的关联关系，写入中间文件
+    # congestion_related() #发现路段间拥堵的关联关系，写入中间文件
     df_corr = pd.read_csv('中间数据/拥堵关联关系(10到15分钟).csv',header=0)
     CPG = create_road_correlation_tree(df_corr) #构建拥堵传播因果关系图，返回图的集合
-
+    constructing_maximal_spanning_trees(CPG)
 
     return
 
