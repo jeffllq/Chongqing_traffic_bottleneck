@@ -111,7 +111,7 @@ def temporal_relationship_congestion(dict_spatio, df_sample_speed):
                             tmp_list.append(road_id)
                             result_list.append((T, key, road_id))
                             #保存当前路段在哪个时间片跟下游哪个路段具有拥堵关联性
-                            print("拥堵时间相连关系找到！")
+                            # print("拥堵时间相连关系找到！")
             T = datetime_add(T, 5)
             # print("更新时间", T)
         dict_temoral[key] = list(set(tmp_list))
@@ -121,19 +121,19 @@ def temporal_relationship_congestion(dict_spatio, df_sample_speed):
 #发现拥堵传播的关联性
 def congestion_related():
     #空间关系：直接相连(暂时不包含间接相连)
-    df_tmp = df_road_topo[['当前ROADID','下游ROADID']].drop_duplicates().reset_index(drop=True)
+    df_tmp = df_road_topo[['当前ROADID','上游ROADID']].drop_duplicates().reset_index(drop=True)
     print(df_tmp)
     road_id_list = list(set(df_tmp['当前ROADID'].values.tolist()))
     dict_spatio = {}
     for road_id in road_id_list:
         df = df_tmp[df_tmp['当前ROADID']==road_id]
-        tmp_list = list(set(df['下游ROADID']))
+        tmp_list = list(set(df['上游ROADID'])) #拥堵是往上游传播
         dict_spatio[road_id] = tmp_list
     print(dict_spatio) #找到空间上直接相邻的关系，存储为字典，路段：[相邻路段]
 
     # df_sample_speed = get_sample_speed('2021-10-19 16:00:00', '2021-10-19 20:00:00') #读取样本速度文件到内存，减少程序执行时间
     df_sample_speed = pd.read_csv('tmp_sample_speed.csv', header=0)
-    #时间关系：下游发生拥堵的时间为上有路段拥堵的时间滞后，设置为1到3个时间片间隔
+    #时间关系：下游发生拥堵的时间为上有路段拥堵的时间滞后，设置为2到3个时间片间隔
     result_spatio_temporal = temporal_relationship_congestion(dict_spatio, df_sample_speed)
     df = pd.DataFrame(result_spatio_temporal, columns=['time', 'congestion_from_road', 'congestion_to_road']).drop_duplicates()
 
@@ -230,7 +230,7 @@ def create_road_correlation_tree(df_corr):
 
 
 def congestion_propagation_causal():
-    # congestion_related() #发现路段间拥堵的关联关系，写入中间文件
+    congestion_related() #发现路段间拥堵的关联关系，写入中间文件
     df_corr = pd.read_csv('中间数据/拥堵关联关系(10到15分钟).csv',header=0)
     CPG = create_road_correlation_tree(df_corr) #构建拥堵传播因果关系图，返回图的集合
 
