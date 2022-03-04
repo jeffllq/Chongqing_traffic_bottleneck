@@ -12,6 +12,7 @@ import json
 from treelib import Tree
 import networkx as nx
 import matplotlib.pyplot as plt
+from queue import Queue
 
 
 #判断是否拥堵，这里依据原专利的中度拥堵的阈值
@@ -237,9 +238,18 @@ def constructing_maximal_spanning_trees(CPG): #根据传播图构建最大生成
                 if graph.has_edge(road_1, road_2):
                     A.loc[road_1, road_2] = 1
 
-        #需要删除环的存在
+        #只需要找到以任一节点起始的传播链路，删除环
+        #单个换，判断重复出现的节点
+        #多个环，
 
         #以任一节点为起点，生成最大生成树
+        m=1
+        q = Queue()
+        for node in Nodes:
+            head  = 1
+            tail = 1
+            q[head] = m
+            head =
 
 
 
