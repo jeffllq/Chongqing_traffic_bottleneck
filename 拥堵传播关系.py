@@ -12,7 +12,7 @@ import json
 from treelib import Tree
 import networkx as nx
 import matplotlib.pyplot as plt
-from queue import Queue
+# from queue import Queue
 
 
 #判断是否拥堵，这里依据原专利的中度拥堵的阈值
@@ -227,8 +227,32 @@ def create_road_correlation_tree(df_corr):
     #     plt.show()
     return CPG #返回拥堵传播图的集合
 
+def DFS(G, head): #深度优先遍历
+    # queue本质上是堆栈，用来存放需要进行遍历的数据
+    # order里面存放的是具体的访问路径
+    queue, order = [], []
+    queue.append(head)
+
+    tree = Tree()
+    tree.create_node(head, head)
+    while(queue):
+        v = queue.pop()
+        order.append(v)
+        for w in G[v]:
+            if(w not in queue)&(w not in order):
+                queue.append(w)
+                tree.create_node(w, w, parent=v)
+            # elif(w in order):
+            #     G.remove_edge(v,w)
+
+    # tree.show()
+
+    return tree
+
+
 def constructing_maximal_spanning_trees(CPG): #根据传播图构建最大生成树，参数CPG：图的集合
 
+    spanning_tree_set  = set()
     for graph in CPG:
         Nodes = graph.nodes()
         # 将图压缩为邻接矩阵A
@@ -238,23 +262,16 @@ def constructing_maximal_spanning_trees(CPG): #根据传播图构建最大生成
                 if graph.has_edge(road_1, road_2):
                     A.loc[road_1, road_2] = 1
 
-        #只需要找到以任一节点起始的传播链路，删除环
-        #单个换，判断重复出现的节点
-        #多个环，
-
-        #以任一节点为起点，生成最大生成树
-        m=1
-        q = Queue()
+        #以任一节点为起点，生成最大生成树，可以方便的知道根节点路段会影响的所有路段
+        print("全部节点",Nodes)
         for node in Nodes:
-            head  = 1
-            tail = 1
-            q[head] = m
-            head =
+            spanning_tree = DFS(graph, node)
+            if len(spanning_tree)>1:
+                spanning_tree_set.add(spanning_tree)
+                spanning_tree.show()
 
-
-
-
-    return
+    #将生成树的结果返回
+    return spanning_tree_set
 
 def congestion_propagation_causal():
     # congestion_related() #发现路段间拥堵的关联关系，写入中间文件
@@ -265,8 +282,8 @@ def congestion_propagation_causal():
     return
 
 if __name__ == '__main__':
-    global db
-    db = DB()
-    global df_road_info, df_road_topo
-    df_road_info, df_road_topo = get_road_info()
+    # global db
+    # db = DB()
+    # global df_road_info, df_road_topo
+    # df_road_info, df_road_topo = get_road_info()
     congestion_propagation_causal()
