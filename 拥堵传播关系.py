@@ -141,32 +141,7 @@ def congestion_related():
     df.to_csv('中间数据/拥堵关联关系(10到15分钟).csv', index=False)
     return
 
-def congestion_occurrence_probability():
-    # 计算拥堵发生概率（一）：定义为周一到周五，5个工作日内(10月的18-22号)，同一时间段发生拥堵的概率
-    # 计算拥堵发生概率（二）：定义工作日内(10月的19号)，晚上16到20点，拥堵时间占总时长的比例
-    # df_sample_speed = pd.read_csv('tmp_sample_speed.csv', header=0)
-    # df_sample_speed['congestion_flag'] = 0
-    # print(df_sample_speed.shape[0])
-    # for idx in range(df_sample_speed.shape[0]):
-    #     speed = df_sample_speed.loc[idx, 'speed']
-    #     road_id = df_sample_speed.loc[idx, 'road_id']
-    #     if is_congestion(road_id, speed):
-    #         df_sample_speed.loc[idx, 'congestion_flag'] = 1
-    # df_sample_speed.to_csv('中间数据/带拥堵判断结果的速度记录.csv', index=False)
 
-    Total_duration = 48 #总共48个时间片
-    df_sample_speed = pd.read_csv('中间数据/带拥堵判断结果的速度记录.csv', header=0)
-    road_id_list = list(set(df_sample_speed['road_id'].values.tolist()))
-    dict_res = {}
-    for road_id in road_id_list:
-        df_tmp = df_sample_speed[df_sample_speed['road_id']==road_id]
-        # print("拥堵发生次数",df_tmp['congestion_flag'].sum())
-        ratio = round(df_tmp['congestion_flag'].sum()/Total_duration, 2)
-        print(road_id,"的拥堵发生概率",ratio)
-        dict_res[road_id] = ratio
-    with open('中间数据/路段拥堵发生概率.txt','w') as file:
-        file.write(json.dumps(dict_res))
-    return
 
 #构建拥堵关联关系的树，这里是怎么结合时间标签的？？？？？？？？？？？？？？？？？？？？？？
 def create_road_correlation_tree(df_corr):
@@ -251,7 +226,6 @@ def DFS(G, head): #深度优先遍历
 
 
 def constructing_maximal_spanning_trees(CPG): #根据传播图构建最大生成树，参数CPG：图的集合
-
     spanning_tree_set  = set()
     for graph in CPG:
         Nodes = graph.nodes()
@@ -263,12 +237,12 @@ def constructing_maximal_spanning_trees(CPG): #根据传播图构建最大生成
                     A.loc[road_1, road_2] = 1
 
         #以任一节点为起点，生成最大生成树，可以方便的知道根节点路段会影响的所有路段
-        print("全部节点",Nodes)
+        # print("全部节点",Nodes)
         for node in Nodes:
             spanning_tree = DFS(graph, node)
             if len(spanning_tree)>1:
                 spanning_tree_set.add(spanning_tree)
-                spanning_tree.show()
+                # spanning_tree.show()
 
     #将生成树的结果返回
     return spanning_tree_set
@@ -277,13 +251,93 @@ def congestion_propagation_causal():
     # congestion_related() #发现路段间拥堵的关联关系，写入中间文件
     df_corr = pd.read_csv('中间数据/拥堵关联关系(10到15分钟).csv',header=0)
     CPG = create_road_correlation_tree(df_corr) #构建拥堵传播因果关系图，返回图的集合
-    constructing_maximal_spanning_trees(CPG)
+    spanning_tree_set = constructing_maximal_spanning_trees(CPG) #构建最大生成树，树的集合
 
+    return spanning_tree_set
+
+def congestion_occurrence_probability():
+    # 计算拥堵发生概率（一）：定义为周一到周五，5个工作日内(10月的18-22号)，同一时间段发生拥堵的概率
+    # 计算拥堵发生概率（二）：定义工作日内(10月的19号)，晚上16到20点，拥堵时间占总时长的比例
+    # df_sample_speed = pd.read_csv('tmp_sample_speed.csv', header=0)
+    # df_sample_speed['congestion_flag'] = 0
+    # print(df_sample_speed.shape[0])
+    # for idx in range(df_sample_speed.shape[0]):
+    #     speed = df_sample_speed.loc[idx, 'speed']
+    #     road_id = df_sample_speed.loc[idx, 'road_id']
+    #     if is_congestion(road_id, speed):
+    #         df_sample_speed.loc[idx, 'congestion_flag'] = 1
+    # df_sample_speed.to_csv('中间数据/带拥堵判断结果的速度记录.csv', index=False)
+
+    Total_duration = 48 #总共48个时间片
+    df_sample_speed = pd.read_csv('中间数据/带拥堵判断结果的速度记录.csv', header=0)
+    road_id_list = list(set(df_sample_speed['road_id'].values.tolist()))
+    result_list = []
+    for road_id in road_id_list:
+        df_tmp = df_sample_speed[df_sample_speed['road_id']==road_id]
+        # print("拥堵发生次数",df_tmp['congestion_flag'].sum())
+        ratio = round(df_tmp['congestion_flag'].sum()/Total_duration, 2)
+        # print(road_id,"的拥堵发生概率",ratio)
+        result_list.append([road_id, ratio])
+
+    df_congestion_occurrence_probability = pd.DataFrame(result_list, columns=['ROADID', 'probability'])
+    print(df_congestion_occurrence_probability)
+    df_congestion_occurrence_probability.to_csv('中间数据/路段拥堵发生概率（用时长近似）.csv', index=False)
     return
 
+
+def congestion_propagation_probability():
+    return
+
+
+def get_road_level(road_id):
+    res = df_road_info[df_road_info['ROADID']==road_id]
+    try:
+        tmp = res.ROADLEVEL.values[0]
+    except:
+        tmp = '支路' #如果没有路段级别信息，默认为支路
+    switch = {
+        "主干路": 2,
+        "次干路": 1,
+        "快速路": 3,
+        "匝道": 1,
+        "支路": 1
+    }
+    road_level = switch[tmp]
+    return  road_level
+
+
+##
+# 定义单个路段的congestion cost：道路等级（如何计算？），拥堵等级
+# 计算各个节点的congestion cost，乘以发生拥堵的概率
+# 加和得到根节点的total congestion cost
+# 原文章做法：从叶节点，往根节点靠拢，中间通过传播概率连接#
+def caculate_root_total_congestion_cost(spanning_tree_set):
+    df_congestion_occurrence_probability = pd.read_csv('中间数据/路段拥堵发生概率（用时长近似）.csv', header=0)
+    for tree in spanning_tree_set:
+        # tree = Tree()
+        # total_congestion_cost = 0
+        # tree.show()
+        root = tree.root
+        print("根节点",tree.root)
+        node_list = []
+        for node in tree.all_nodes_itr():
+            node_list.append(node.tag)
+        df_tmp = df_congestion_occurrence_probability[df_congestion_occurrence_probability['ROADID'].isin(node_list)].reset_index(drop=True)
+        df_tmp['ROADLEVEL'] = 0
+        for i in range(df_tmp.shape[0]):
+            df_tmp.loc[i, 'ROADLEVEL'] = get_road_level(df_tmp.loc[i, 'ROADID'])
+        print(df_tmp)
+        df_tmp['congestion_cost'] =
+
+    return (roadid, 快速路拥堵总时间, 主干路拥堵总时间， 其余道路拥堵总时间)
+
+
+
 if __name__ == '__main__':
-    # global db
-    # db = DB()
-    # global df_road_info, df_road_topo
-    # df_road_info, df_road_topo = get_road_info()
-    congestion_propagation_causal()
+    global db
+    db = DB()
+    global df_road_info, df_road_topo
+    df_road_info, df_road_topo = get_road_info()
+    spanning_tree_set = congestion_propagation_causal()
+    # congestion_occurrence_probability()
+    caculate_root_total_congestion_cost(spanning_tree_set)
