@@ -65,7 +65,7 @@ def get_sample_speed(T_start, T_end):
 
 def get_road_info():
     df_road_info = pd.read_csv('data/路网数据/路网.csv', header=0)
-    df_road_topo = pd.read_csv('data/ROAD上下游关系.csv', header=0)
+    df_road_topo = pd.read_csv('中间数据/ROAD上下游关系.csv', header=0)
     return df_road_info, df_road_topo
 
 def temporal_relationship_congestion(dict_spatio, df_sample_speed):
@@ -305,6 +305,15 @@ def get_road_level(road_id):
     road_level = switch[tmp]
     return  road_level
 
+def get_road_CDS(road_id):
+    res = df_road_info[df_road_info['ROADID']==road_id]
+    try:
+        tmp = res.CDS.values[0]
+    except:
+        tmp = 1 #如果信息，默认为车道数是1
+
+    return  tmp
+
 
 ##
 # 定义单个路段的congestion cost：道路等级（如何计算？），拥堵等级
@@ -313,23 +322,30 @@ def get_road_level(road_id):
 # 原文章做法：从叶节点，往根节点靠拢，中间通过传播概率连接#
 def caculate_root_total_congestion_cost(spanning_tree_set):
     df_congestion_occurrence_probability = pd.read_csv('中间数据/路段拥堵发生概率（用时长近似）.csv', header=0)
+    total_congestion_cost_list = []
     for tree in spanning_tree_set:
         # tree = Tree()
         # total_congestion_cost = 0
         # tree.show()
         root = tree.root
-        print("根节点",tree.root)
+        # print("根节点",tree.root)
         node_list = []
         for node in tree.all_nodes_itr():
             node_list.append(node.tag)
         df_tmp = df_congestion_occurrence_probability[df_congestion_occurrence_probability['ROADID'].isin(node_list)].reset_index(drop=True)
         df_tmp['ROADLEVEL'] = 0
+        df_tmp['CDS'] = 0
         for i in range(df_tmp.shape[0]):
             df_tmp.loc[i, 'ROADLEVEL'] = get_road_level(df_tmp.loc[i, 'ROADID'])
-        print(df_tmp)
-        df_tmp['congestion_cost'] =
-
-    return (roadid, 快速路拥堵总时间, 主干路拥堵总时间， 其余道路拥堵总时间)
+            df_tmp.loc[i, 'CDS'] = get_road_CDS(df_tmp.loc[i, 'ROADID'])
+        df_tmp['congestion_cost'] = df_tmp['probability']*df_tmp['CDS']
+        #用车道数来作为权重
+        total = df_tmp['congestion_cost'].sum()
+        total_congestion_cost_list.append((int(root), total))
+    df_total_congestion_cost = pd.DataFrame(total_congestion_cost_list, columns=['ROADID', 'total_congestion_cost'])
+    df_total_congestion_cost = df_total_congestion_cost.sort_values(by=['total_congestion_cost']).reset_index(drop=True)
+    df_total_congestion_cost.to_csv('结果数据/total_ocngestion_cost.csv', index=False)
+    return
 
 
 

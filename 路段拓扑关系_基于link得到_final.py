@@ -77,5 +77,5 @@ if __name__ == '__main__':
     # df_road_nodes = find_road_nodes(df_temp_DXD_0, df_temp_DXD_1)
     # df_road_nodes.to_csv('data/路网拓扑_测试.csv',index=False)
     #将起始点表示的road方向，转换为road间的上下游关系  当前路段roadid 上游roadid 下游roadid
-    df_road_nodes = pd.read_csv('data/路网拓扑_节点表示.csv')
+    df_road_nodes = pd.read_csv('中间数据/路网拓扑_节点表示.csv')
     get_road_topo(df_road_nodes, df_road)
