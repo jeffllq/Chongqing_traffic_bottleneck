@@ -196,10 +196,10 @@ def create_road_correlation_tree(df_corr):
             # print(len(CPG))
 
     print(len(CPG)) #最后得到35个拥堵传播图
-    # plt.figure()
-    # for G in CPG:
-    #     nx.draw(G, with_labels=True)
-    #     plt.show()
+    plt.figure()
+    for G in CPG:
+        nx.draw(G, with_labels=True)
+        plt.show()
     return CPG #返回拥堵传播图的集合
 
 def DFS(G, head): #深度优先遍历
@@ -242,7 +242,7 @@ def constructing_maximal_spanning_trees(CPG): #根据传播图构建最大生成
             spanning_tree = DFS(graph, node)
             if len(spanning_tree)>1:
                 spanning_tree_set.add(spanning_tree)
-                # spanning_tree.show()
+                spanning_tree.show()
 
     #将生成树的结果返回
     return spanning_tree_set
@@ -355,5 +355,6 @@ if __name__ == '__main__':
     global df_road_info, df_road_topo
     df_road_info, df_road_topo = get_road_info()
     spanning_tree_set = congestion_propagation_causal()
+    print(len(spanning_tree_set))
     # congestion_occurrence_probability()
-    caculate_root_total_congestion_cost(spanning_tree_set)
+    # caculate_root_total_congestion_cost(spanning_tree_set)
